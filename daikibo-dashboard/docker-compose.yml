@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: daikibo_dashboard
+      POSTGRES_USER: daikibo_admin
+      POSTGRES_PASSWORD: secure_password_change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - daikibo_network
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: daikibo_dashboard
+      DB_USER: daikibo_admin
+      DB_PASSWORD: secure_password_change_me
+    depends_on:
+      - postgres
+    networks:
+      - daikibo_network
+    volumes:
+      - ./backend/src:/app/src
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - daikibo_network
+    volumes:
+      - ./frontend/src:/app/src
+
+volumes:
+  postgres_data:
+
+networks:
+  daikibo_network:
+    driver: bridge
